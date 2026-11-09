@@ -225,10 +225,7 @@ def test_t626_cancel_blank_id_raises_value_error(bad_id: str) -> None:
 
 def test_t627_cancel_trims_id_and_other_appointments_unchanged() -> None:
     """T-627: a padded ID works and only the target changes."""
-    data_store, appointments, first = booked_session()
-    patient = data_store.find_patient('P1')
-    practitioner = data_store.find_practitioner('D1')
-    assert patient is not None and practitioner is not None
+    _, appointments, first = booked_session()
     second = appointments.book_appointment(
         'A2',
         'P1',
