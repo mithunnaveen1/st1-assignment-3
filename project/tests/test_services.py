@@ -243,3 +243,210 @@ def test_t628_cancelled_slot_does_not_block_rebooking() -> None:
     appointments.cancel_appointment('A1')
     rebooked = appointments.book_appointment('A3', 'P1', 'D1', WHEN)
     assert rebooked.status is AppointmentStatus.SCHEDULED
+
+
+# ======================================================================
+# Stage 7 additions: registration, booking, conflicts and lookup
+# ======================================================================
+
+
+# ---- Registration: FR-01, FR-03, AC-01.1, AC-01.2 ---------------------
+
+
+def test_t741_registered_patient_is_stored_and_retrievable() -> None:
+    """T-741 (FR-01, AC-01.1): complete service evidence of storage."""
+    data_store, patients, _, _ = fresh_session()
+    registered = patients.register_patient('P1', 'Alex Example')
+    assert data_store.find_patient('P1') is registered
+    assert data_store.list_patients() == [registered]
+
+
+def test_t742_trimmed_duplicate_patient_id_is_rejected() -> None:
+    """T-742 (AC-01.2): a padded copy of an existing ID is a duplicate,
+    and the original record is not overwritten.
+    """
+    data_store, patients, _, _ = fresh_session()
+    original = patients.register_patient('P1', 'Alex Example')
+    with pytest.raises(ValueError):
+        patients.register_patient('  P1  ', 'Someone Else')
+    assert data_store.find_patient('P1') is original
+    assert original.name == 'Alex Example'
+    assert len(data_store.list_patients()) == 1
+
+
+def test_t743_different_case_patient_id_is_a_different_patient() -> None:
+    """T-743 (validation contract): IDs are case-sensitive, so P1 and p1
+    can both be registered.
+    """
+    data_store, patients, _, _ = fresh_session()
+    patients.register_patient('P1', 'Alex Example')
+    patients.register_patient('p1', 'Sam Example')
+    assert len(data_store.list_patients()) == 2
+
+
+def test_t744_blank_patient_registration_leaves_store_empty() -> None:
+    """T-744 (validation contract, NFR-01): rejection stores nothing."""
+    data_store, patients, _, _ = fresh_session()
+    with pytest.raises(ValueError):
+        patients.register_patient('   ', 'Alex Example')
+    with pytest.raises(ValueError):
+        patients.register_patient('P1', '   ')
+    assert data_store.list_patients() == []
+
+
+def test_t745_duplicate_practitioner_id_is_rejected_without_overwrite() -> None:
+    """T-745 (FR-03, BR-02): the original practitioner is preserved."""
+    data_store, _, practitioners, _ = fresh_session()
+    original = practitioners.register_practitioner(
+        'D1',
+        'Taylor Example',
+        'General',
+    )
+    with pytest.raises(ValueError):
+        practitioners.register_practitioner(' D1 ', 'Other Name', 'Surgery')
+    assert data_store.find_practitioner('D1') is original
+    assert original.specialty == 'General'
+    assert len(data_store.list_practitioners()) == 1
+
+
+# ---- Booking: FR-04, AC-03.1, AC-03.2, FR-08, AC-06.1 -----------------
+
+
+def test_t751_booking_stores_scheduled_appointment_with_real_objects() -> None:
+    """T-751 (FR-04, AC-03.1): registered participants, unique ID and a
+    free time give a stored SCHEDULED appointment.
+    """
+    data_store, patients, practitioners, appointments = fresh_session()
+    patient = patients.register_patient('P1', 'Alex Example')
+    practitioner = practitioners.register_practitioner(
+        'D1',
+        'Taylor Example',
+        'General',
+    )
+    booked = appointments.book_appointment('A1', 'P1', 'D1', WHEN)
+    assert booked.status is AppointmentStatus.SCHEDULED
+    assert booked.patient is patient
+    assert booked.practitioner is practitioner
+    assert data_store.find_appointment('A1') is booked
+
+
+def test_t752_booking_unknown_patient_is_rejected_and_nothing_stored() -> None:
+    """T-752 (AC-03.2): an unknown patient prevents booking."""
+    data_store, _, practitioners, appointments = fresh_session()
+    practitioners.register_practitioner('D1', 'Taylor Example', 'General')
+    with pytest.raises(LookupError):
+        appointments.book_appointment('A1', 'P9', 'D1', WHEN)
+    assert data_store.list_appointments() == []
+
+
+def test_t753_booking_unknown_practitioner_is_rejected() -> None:
+    """T-753 (AC-03.2): an unknown practitioner prevents booking."""
+    data_store, patients, _, appointments = fresh_session()
+    patients.register_patient('P1', 'Alex Example')
+    with pytest.raises(LookupError):
+        appointments.book_appointment('A1', 'P1', 'D9', WHEN)
+    assert data_store.list_appointments() == []
+
+
+def test_t754_booking_with_invalid_time_stores_nothing() -> None:
+    """T-754 (NFR-01): an invalid datetime leaves the store unchanged."""
+    data_store, patients, practitioners, appointments = fresh_session()
+    patients.register_patient('P1', 'Alex Example')
+    practitioners.register_practitioner('D1', 'Taylor Example', 'General')
+    with pytest.raises(ValueError):
+        appointments.book_appointment(
+            'A1',
+            'P1',
+            'D1',
+            datetime(2026, 10, 1, 9, 0, 30),
+        )
+    assert data_store.list_appointments() == []
+
+
+def test_t755_duplicate_appointment_id_does_not_replace_original() -> None:
+    """T-755 (BR-03): a repeated appointment ID is rejected and the
+    original time is kept.
+    """
+    data_store, appointments, original = booked_session()
+    with pytest.raises(ValueError):
+        appointments.book_appointment(
+            'A1',
+            'P1',
+            'D1',
+            datetime(2026, 10, 1, 11, 0),
+        )
+    assert data_store.find_appointment('A1') is original
+    assert original.date_time == WHEN
+    assert len(data_store.list_appointments()) == 1
+
+
+def test_t756_find_appointment_known_unknown_and_blank() -> None:
+    """T-756 (FR-08, AC-06.1): known ID returns the object, a valid
+    unknown ID raises LookupError, a blank ID raises ValueError.
+    """
+    _, appointments, booked = booked_session()
+    assert appointments.find_appointment('A1') is booked
+    with pytest.raises(LookupError):
+        appointments.find_appointment('A9')
+    with pytest.raises(ValueError):
+        appointments.find_appointment('  ')
+
+
+# ---- Practitioner conflicts: FR-05, AC-04.1, AC-04.2 -------------------
+
+
+def test_t761_same_practitioner_same_time_conflicts() -> None:
+    """T-761 (FR-05, AC-04.1): same practitioner, exact time and an
+    existing SCHEDULED appointment is rejected without changing state.
+    """
+    data_store, appointments, original = booked_session()
+    with pytest.raises(ValueError):
+        appointments.book_appointment('A2', 'P1', 'D1', WHEN)
+    assert data_store.find_appointment('A2') is None
+    assert data_store.list_appointments() == [original]
+
+
+def test_t762_different_practitioner_same_time_is_allowed() -> None:
+    """T-762 (FR-05, AC-04.2): conflicts belong to a practitioner."""
+    data_store, appointments, first = booked_session()
+    practitioners = PractitionerService(data_store)
+    practitioners.register_practitioner('D2', 'Jordan Example', 'Surgery')
+    second = appointments.book_appointment('A2', 'P1', 'D2', WHEN)
+    assert second.status is AppointmentStatus.SCHEDULED
+    assert data_store.list_appointments() == [first, second]
+
+
+def test_t763_one_minute_apart_does_not_conflict() -> None:
+    """T-763 (FR-05 boundary): the rule is exact time, not an overlap."""
+    _, appointments, _ = booked_session()
+    next_minute = appointments.book_appointment(
+        'A2',
+        'P1',
+        'D1',
+        datetime(2026, 10, 1, 9, 1),
+    )
+    assert next_minute.status is AppointmentStatus.SCHEDULED
+
+
+def test_t764_completed_appointment_does_not_block_the_slot() -> None:
+    """T-764 (FR-05, BR-05, BR-08): only SCHEDULED appointments
+    conflict, so a COMPLETED one at the same time does not.
+    """
+    data_store, patients, practitioners, appointments = fresh_session()
+    patient = patients.register_patient('P1', 'Alex Example')
+    practitioner = practitioners.register_practitioner(
+        'D1',
+        'Taylor Example',
+        'General',
+    )
+    data_store.add_appointment(
+        Appointment(
+            'A1',
+            patient,
+            practitioner,
+            WHEN,
+            AppointmentStatus.COMPLETED,
+        ),
+    )
+    booked = appointments.book_appointment('A2', 'P1', 'D1', WHEN)
+    assert booked.status is AppointmentStatus.SCHEDULED
