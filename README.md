@@ -5,13 +5,13 @@ Baseline: Stage 6 foundation, 2026 revision 2. This starter deliberately leaves 
 
 ## Group index
 
-- Group and tutorial: [complete]
-- Member names, GitHub usernames and UG/PG cohorts: [complete]
-- Shared repository URL: [complete]
-- Latest completed stage: [complete]
-- Verified code SHA: [complete]
-- Test command, working directory and observed result: [complete]
-- Final submitted SHA, if different from tested code SHA: [complete; explain evidence-only changes]
+- Group and tutorial: Solo group (UG), approved by the tutor
+- Member names, GitHub usernames and UG/PG cohorts: Mithun Naveen, mithunnaveen1, UG
+- Shared repository URL: https://github.com/mithunnaveen1/st1-assignment-3
+- Latest completed stage: Stage 7 (Stage 6 and Stage 7 integrated and verified; Stage 8 not completed because the Stage 8 preparation utility was not available, see stage08 record)
+- Verified code SHA: b7496a8da4d1929c59c63ec21d756dfb39abc336
+- Test command, working directory and observed result: python -m pytest in project/, 76 passed (Python 3.14.2, pytest 8.3.5)
+- Final submitted SHA, if different from tested code SHA: the latest main commit at submission. It differs from the tested code SHA only by evidence-only commits (stage records, Copilot output files and this README); there are no code or test changes after b7496a8.
 
 Do not put student IDs, private peer ratings, credentials or personal contact details here.
 
