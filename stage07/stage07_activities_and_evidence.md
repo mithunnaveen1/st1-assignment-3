@@ -274,31 +274,68 @@ Connect cases to actual contracts and verify unchanged state after rejection.
 
 Select ONE real acceptance criterion. Complete human-first fields before using Copilot. Do not require an accepted generated test.
 
-Requirement: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Acceptance criterion: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Behaviour to test: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Human-first test idea/categories: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Prompt and purpose: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
+Requirement: FR-05 Prevent practitioner conflict (SmartCare A3 Requirements Baseline 2026, revision 2).
+Acceptance criterion: AC-04.1 (a booking by the same practitioner at the same date/time as a SCHEDULED appointment is rejected); AC-04.2 (a different practitioner at that time is allowed).
+Behaviour to test: A second booking by the same practitioner at the same time raises ValueError and nothing is added to the store. A different practitioner at that time, or the same practitioner at a different time, is accepted.
+Human-first test idea/categories: (1) valid: two different practitioners at the same time both succeed; (2) invalid: same practitioner, same time, different appointment ID raises ValueError and the store still contains only the first appointment; (3) boundaries: same practitioner one minute apart succeeds; the earlier appointment is cancelled and the same slot can then be booked again; a COMPLETED appointment at that time does not block. Recorded in the working session at about 9:18 pm Sydney on 10 Nov 2026, before the Copilot session. (The idea was drafted with Claude and adopted by the student; the Stage 7 tests (for example T-761 and T-764) existed before this comparison, so this is a retrospective comparison.)
+Prompt and purpose: The Stage 7 handout (Part F) test-design prompt for FR-05 / AC-04.1 and AC-04.2, plus the public contracts. Prompt text drafted with Claude; the Copilot session is real (GitHub Copilot Free, Copilot Chat on github.com, normal chat, 10 Nov 2026 about 9:20 pm Sydney). Full output: stage07/copilot_stage7_output.md. Copilot did not run any test.
 
 For each significant candidate, copy this entry as needed:
-- Copilot test idea/candidate: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- What it claims to verify: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Requirement trace: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Assertion quality: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Human critique: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Decision: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Reason: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Final test reference if accepted/modified: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Actual verification result: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
+
+Candidate 1: same practitioner, same time is rejected without storing the booking
+- Copilot test idea/candidate: Book A1 for R1, then try A2 for the same practitioner and time; expect ValueError, A1 still SCHEDULED, and A2 not found (LookupError).
+- What it claims to verify: AC-04.1 (rejection of a same-practitioner SCHEDULED conflict) with unchanged state.
+- Requirement trace: FR-05, AC-04.1.
+- Assertion quality: Mixed. pytest.raises(ValueError) and the LookupError check for A2 are meaningful. The assertion existing_after.appointment_id == existing_before.appointment_id is weak: both come from find_appointment("A1"), so it compares an ID with itself and can never fail. It also does not check that the stored object is the same one, or that nothing else was stored.
+- Human critique: Good idea, one tautological assertion. The fixtures patient_service, practitioner_service and appointment_service do not exist in this project (it uses helper functions such as booked_session).
+- Decision: Modify (partly correct).
+- Reason: The scenario is needed, but the unchanged-state check should compare the stored object and the whole list of appointments, not an ID with itself.
+- Final test reference if accepted/modified: T-761 test_t761_same_practitioner_same_time_conflicts (written before this comparison). It asserts ValueError, data_store.find_appointment('A2') is None and data_store.list_appointments() == [original].
+- Actual verification result: python -m pytest in project/ on main: 76 passed; T-761 also passed when run on its own with T-733 and T-764 (3 passed).
+
+Candidate 2: different practitioner at the same time is allowed
+- Copilot test idea/candidate: Two practitioners R1 and R2; book A1 with R1, then A2 with R2 at the same time.
+- What it claims to verify: AC-04.2.
+- Requirement trace: FR-05, AC-04.2.
+- Assertion quality: Weak. stored.appointment_id == "A2" and returned.appointment_id == stored.appointment_id only compare an ID with itself. It does not check the practitioner or time, and it does not check that A1 is still stored and SCHEDULED, so a broken booking that stored the wrong practitioner could still pass.
+- Human critique: Convincing at first glance but weak: the assertions are close to tautologies.
+- Decision: Modify (partly correct).
+- Reason: The scenario is valid, but it needs stronger assertions on the stored result.
+- Final test reference if accepted/modified: T-762 test_t762_different_practitioner_same_time_is_allowed. It asserts second.status is SCHEDULED and data_store.list_appointments() == [first, second], so both appointments are stored as the actual objects.
+- Actual verification result: 76 passed on main (b7496a8), including T-762.
+
+Candidate 3: same practitioner at an adjacent minute is not the same time
+- Copilot test idea/candidate: Book A1 at 09:00 and A2 at 09:01 for the same practitioner; expect success.
+- What it claims to verify: The conflict rule is exact date and time, not the same hour (a boundary).
+- Requirement trace: FR-05 (conflict is the same date/time) and the minute-precision rule.
+- Assertion quality: Adequate but thin: it checks the status and the ID, but not the practitioner or time of the stored appointment.
+- Human critique: Valid boundary that I had already planned (human-first category 3).
+- Decision: Reject as a new test (duplicate); idea accepted.
+- Reason: It repeats an existing test, so adding it would add no new coverage.
+- Final test reference if accepted/modified: T-763 test_t763_one_minute_apart_does_not_conflict, which covers the same boundary.
+- Actual verification result: T-763 passed in the 76-test run.
+
+Candidate 4: a cancelled appointment at the same time does not conflict
+- Copilot test idea/candidate: Book A1, cancel it, then book A2 for the same practitioner and time; check A2 SCHEDULED and A1 still CANCELLED.
+- What it claims to verify: Only SCHEDULED appointments conflict; a retained CANCELLED one does not.
+- Requirement trace: FR-05 with the retained-history rule (FR-07) and BR-05.
+- Assertion quality: Good. It also checks that A1 stays CANCELLED, which is stronger than the existing test.
+- Human critique: Correct behaviour, and it matches the code, where has_practitioner_conflict looks only at SCHEDULED appointments. Copilot also correctly warned to confirm the interpretation against the baseline.
+- Decision: Modify (partly): scenario not added as a new test; the extra assertion is noted.
+- Reason: The scenario already exists as T-628 (test_t628_cancelled_slot_does_not_block_rebooking), which only asserts that the rebooked appointment is SCHEDULED. Copilot's extra check that A1 remains CANCELLED would strengthen it. I have not changed the Stage 7 code or tests in this record; this is noted as a possible later improvement.
+- Final test reference if accepted/modified: T-628 (existing). No new test.
+- Actual verification result: T-628 passed in the 76-test run.
+
+Copilot claim about a COMPLETED boundary test: Copilot said it did not propose one because there is no public way to create or complete an appointment. That is wrong for this project: the public Appointment constructor accepts a status argument, and a COMPLETED appointment can be added with data_store.add_appointment. T-764 (test_t764_completed_appointment_does_not_block_the_slot) does this and passed. Decision: Reject that claim, and keep T-764.
 
 Before accepting: traces to a requirement/criterion; can fail for the right reason; assertion checks required behaviour; no invented business rule; no unnecessary private implementation dependence. Reject/modify weak assertions, invented requirements, excessive mocking, duplicates, wrong exceptions, obsolete architecture and unnecessary dependencies.
 
 ## I Weak Copilot Test Reflection
 
-Which Copilot-generated test looked convincing but was weak? PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Why was it weak? PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-How did you strengthen it? PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-Accepted / modified / rejected test decisions and evidence: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
+Which Copilot-generated test looked convincing but was weak? Candidate 2 (different practitioner at the same time is allowed). It looks complete, with three asserts, but they mostly compare an appointment ID with itself.
+Why was it weak? stored.appointment_id == "A2" and returned.appointment_id == stored.appointment_id can hardly fail, and nothing checks the stored practitioner, the time, or that A1 is still stored. A wrong booking could pass. Candidate 1 had the same kind of tautology (existing_after.appointment_id == existing_before.appointment_id).
+How did you strengthen it? In the retained tests, T-761 and T-762 compare the real stored objects and the whole appointment list (data_store.list_appointments() == [original] and == [first, second]) and check that the rejected A2 is not stored (find_appointment('A2') is None). T-761 and T-762 were written before this comparison, so this is a retrospective check that they are stronger than the Copilot versions, not a change made because of Copilot.
+Accepted / modified / rejected test decisions and evidence: Candidate 1 modified (T-761), candidate 2 modified (T-762), candidate 3 rejected as a duplicate (T-763), candidate 4 modified in idea only (T-628, no code change), and the claim that no COMPLETED test is possible rejected (T-764). Evidence: python -m pytest in project/ on main b7496a8: 76 passed. No new test code was added from Copilot output.
 
 ## J Regression Run
 
@@ -372,7 +409,7 @@ Every test must trace to a requirement and contain a meaningful assertion, tests
 
 Tested Stage 7 main SHA: b7496a8da4d1929c59c63ec21d756dfb39abc336
 Full-suite result: 76 passed, 0 failed (python -m pytest in project/ on main, Python 3.14.2, pytest 8.3.5)
-Unresolved defects and effect on baseline: No product or test defects found. Open items: GitHub Copilot candidate-test activity (H, I) not done; sections A, K and N were drafted with Claude and reviewed by the student (disclosed).
+Unresolved defects and effect on baseline: No product or test defects found. Open items: none. The Copilot candidate-test comparison (H, I) was done afterwards (see stage07/copilot_stage7_output.md); it added no new test code. Sections A, K and N were drafted with Claude and reviewed by the student (disclosed).
 Clean working tree and integration evidence: PR #6 merged; git pull --ff-only moved main from 562d157 to b7496a8 with no local changes; full suite re-run on main.
-Stage 8 handover status: Code and tests are integrated and verified. Only the Copilot items (H, I) remain outstanding. No Stage 8 work has been done.
-All tutorial/formative responses and traceability/Copilot decisions complete: Not fully. Traceability and sections A, K and N are complete (Claude-drafted, student-reviewed). The Copilot items (H, I) are pending until real Copilot use.
+Stage 8 handover status: Code and tests are integrated and verified. All Stage 7 items are recorded. No Stage 8 work has been done yet.
+All tutorial/formative responses and traceability/Copilot decisions complete: Yes. Traceability, sections A, K and N (Claude-drafted, student-reviewed) and the Copilot comparison (H, I, from a real session) are complete.
