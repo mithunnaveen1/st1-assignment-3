@@ -71,7 +71,7 @@ GitHub Copilot says: "Looks good; tests pass."
 | PR size | One focused change per PR, linked to its issue(s), touching only the files needed |
 | Another-member review requirement | The group has one member, so no other member can review. With the tutor's approval the author self-reviews the Files changed diff against the issue criteria and posts that review on the PR before any AI review. Any AI review is recorded separately and labelled with the tool that produced it. |
 | Merge rule | Merge only after the self-review is posted and the full test suite passes. Then update main with git pull --ff-only, re-run the full suite and record the merged SHA. |
-| Significant Copilot disclosure rule | Disclose significant AI help in the PR description and the record, naming the tool accurately. GitHub Copilot use is recorded only from real sessions; until then it is marked pending. |
+| Significant Copilot disclosure rule | Disclose significant AI help in the PR description and the record, naming the tool accurately. GitHub Copilot use is recorded only from real sessions. |
 
 ## F Issue and backlog index
 
@@ -79,9 +79,9 @@ Create at least two focused issues. Add a linked practitioner-lookup issue or an
 
 | Issue link | Requirement | Owner | Acceptance criteria or precise link | Status |
 |---|---|---|---|---|
-| https://github.com/mithunnaveen1/st1-assignment-3/issues/1 | FR-02 | mithunnaveen1 | Issue #1 acceptance criteria (stored lookup, LookupError, ValueError, trimmed and case-sensitive IDs) | Open; closes when PR #4 merges |
-| https://github.com/mithunnaveen1/st1-assignment-3/issues/2 | Supporting practitioner lookup for FR-03 | mithunnaveen1 | Issue #2 acceptance criteria (same contract for practitioners) | Open; closes when PR #4 merges |
-| https://github.com/mithunnaveen1/st1-assignment-3/issues/3 | FR-06 and FR-07 | mithunnaveen1 | Issue #3 acceptance criteria (guarded cancellation, retained history, errors) | Open; closes when PR #4 merges |
+| https://github.com/mithunnaveen1/st1-assignment-3/issues/1 | FR-02 | mithunnaveen1 | Issue #1 acceptance criteria (stored lookup, LookupError, ValueError, trimmed and case-sensitive IDs) | Closed when PR #4 merged |
+| https://github.com/mithunnaveen1/st1-assignment-3/issues/2 | Supporting practitioner lookup for FR-03 | mithunnaveen1 | Issue #2 acceptance criteria (same contract for practitioners) | Closed when PR #4 merged |
+| https://github.com/mithunnaveen1/st1-assignment-3/issues/3 | FR-06 and FR-07 | mithunnaveen1 | Issue #3 acceptance criteria (guarded cancellation, retained history, errors) | Closed when PR #4 merged |
 
 ## G Pull request evidence
 
@@ -100,7 +100,7 @@ Repeat this block per PR. Record actual events, not planned approvals.
 - Author response/change and verification: Accepted finding 1 and removed the unused lines in commit 069aa91 (1 insertion, 4 deletions). Rejected finding 2 (3 lines each, an abstraction adds complexity). Finding 3 accepted as a note here only: IDs T-607 to T-610 and T-615 to T-620 are intentionally unused; no code change. Verified by python -m pytest in project/ after the merge: 30 passed.
 - Reviewer recheck and approval: No independent approval exists. GitHub does not allow approving your own PR, so the review was submitted as a Comment. The author merged after the self-review under the tutor-approved solo arrangement.
 - Merge outcome and SHA: PR #4 merged into main with a merge commit, 562d15712c8de0bb587b7f3b72b6fa9022c9594b. The branch head merged was 069aa91162edc30b065913070cd4584473a918e9.
-- Significant Copilot assistance: None so far. GitHub Copilot has not been used and its comparison is pending (see H and I). Significant AI assistance from Claude (not Copilot) is disclosed: Claude drafted the three service methods, test_services.py and the issue drafts, and wrote the Claude review. The author read the code, ran the tests and wrote the self-review. The tutor said using Claude is allowed.
+- Significant Copilot assistance: None in the code or tests. GitHub Copilot (Free, Copilot Chat) was used afterwards for the required review comparison only, after the merge (see H and I, and stage06/copilot_stage6_output.md). Significant AI assistance from Claude (not Copilot) is disclosed: Claude drafted the three service methods, test_services.py and the issue drafts, and wrote the Claude review. The author read the code, ran the tests and wrote the self-review. The tutor said using Claude is allowed.
 - Linked issue closure: PR #4 linked issues #1, #2 and #3 with Closes, so they closed on merge. (Verify on GitHub that they show as Closed.)
 - Each member updated main: mithunnaveen1 (sole member) ran git switch main and git pull --ff-only; main moved from 6f7bf1e to 562d157.
 - Integrated verification after merge: python -m pytest in project/ on main, 30 passed (8 supplied plus 22 new), Python 3.14.2, pytest 8.3.5, code SHA 562d15712c8de0bb587b7f3b72b6fa9022c9594b
@@ -109,24 +109,26 @@ Repeat this block per PR. Record actual events, not planned approvals.
 
 Record meaningful required use, not every trivial completion. Repeat per significant interaction.
 
-- Member and task: PENDING. No GitHub Copilot interaction has taken place yet, so nothing is recorded here. This section will be completed from a real Copilot session, not written in advance.
-- Prompt/purpose and relevant issue/diff: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Summary of output: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Human check against actual code, requirements and tests: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Decision — Accept / Modify / Reject: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Reason: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
-- Verification/evidence: PENDING: GitHub Copilot has not been used yet; to be completed from a real Copilot session
+Timing note: the human self-review (section G and I) was posted on PR #4 before this Copilot session. The Copilot comparison was done afterwards on the already merged diff (PR #4, merge commit 562d157), so it did not influence the merge decision. Copilot did not run the tests.
+
+- Member and task: mithunnaveen1. Required Copilot review comparison of the Stage 6 diff (find_patient, find_practitioner, cancel_appointment) against issues #1 to #3. Tool: GitHub Copilot Free, Copilot Chat on github.com, normal chat, 10 Nov 2026 about 8:14 pm Sydney.
+- Prompt/purpose and relevant issue/diff: The Stage 6 handout (Part H) review prompt with the criteria of issues #1, #2 and #3 and the three service methods from PR #4. The prompt wording was drafted with Claude; the Copilot session is real. Full prompt and unedited output: stage06/copilot_stage6_output.md.
+- Summary of output: Copilot correctly summarised the diff and judged the service methods consistent with the requirements, with the cancellation rule left in Appointment.cancel(). It raised two findings. (1) Important: test coverage could not be verified because the test contents were not supplied. (2) Optional: the "22 new tests" count looks inconsistent with the range T-601 to T-628.
+- Human check against actual code, requirements and tests: Checked against test_services.py and the code. Finding 1: the tests do assert the points it asked about: T-601 (lookup returns the same object with `is`), T-603 (unknown ID adds nothing), T-604 (blank ID, 3 cases), T-605 and T-606 (trimming, case sensitivity), T-621 (cancel changes status and returns the same object), T-622 (retained by ID and in list_appointments()), T-623 and T-624 (repeat and completed cancellation raise ValueError with unchanged state). Finding 2: counted the file: 18 test functions with IDs T-601 to T-606, T-611 to T-614 and T-621 to T-628. T-607 to T-610 and T-615 to T-620 are intentionally unused. Three parametrised tests (3 + 2 + 2 cases) add 4 extra cases, so 22 tests were collected. Together with the 8 supplied tests, python -m pytest gave 30 passed.
+- Decision — Accept / Modify / Reject: Finding 1: Modify (partly correct). Finding 2: Modify (partly correct). Copilot's summary and requirement alignment: Accept.
+- Reason: Finding 1 is a valid thing to check, but not a defect in the PR: Copilot was not given the test code, so it could not see the assertions. Its "Important" ranking therefore overstates the risk. Finding 2 is a correct observation (the range spans 28 numbers) but not an inconsistency: the gaps are deliberate and the count of 22 is correct once parametrised cases are counted. I already recorded the gaps as a note in the Claude review decision.
+- Verification/evidence: Test file read and test IDs counted (18 functions, 22 collected cases). python -m pytest in project/ on main gave 30 passed after PR #4 (562d157). No code change was needed.
 
 ## I Human versus Copilot review comparison
 
 - Human reviewer noticed before consulting Copilot: find_patient raises LookupError via the "if patient is None" check; the rule stopping a repeat cancellation is in Appointment.cancel() in domain.py and the service only calls it; test T-623 would fail if the second cancel did not raise ValueError; no risks or missing items noticed.
-- Copilot noticed: PENDING. The Copilot comparison has not been done. The comparison below is with a Claude review only, clearly not a Copilot review.
-- Overlap: PENDING for Copilot. With the Claude review: both agreed the three methods meet the issue criteria and that the cancellation rule lives in the domain method.
-- What did the human reviewer notice that Copilot did not: PENDING for Copilot.
-- What did Copilot identify that the human reviewer initially missed: PENDING for Copilot. The Claude review found unused setup lines in test T-627, near-duplicate lookup code, and gaps in the test ID numbering, which the human review had missed. Claude also noted that its own review is not independent because it drafted the code.
-- Unsupported or incorrect Copilot suggestion: PENDING for Copilot. None identified in the Claude review.
-- Human judgement accepted, modified or rejected, and why: Accepted the T-627 cleanup (small and removes clutter), rejected the duplication point (an abstraction is not worth it for 3-line methods), and accepted the test ID gap as a note only.
-- Which evidence justified merge approval: The self-review against the issue criteria, 30 passing tests (8 supplied plus 22 new), the reviewed two-file diff, and the T-627 fix. There was no independent approval and the Copilot comparison was still pending at merge, which is a recorded gap.
+- Copilot noticed: The service methods match the requirements and do not bypass the domain rule or remove the appointment; no unrelated changes are visible; test coverage could not be verified from what it was given; the test count and ID range looked ambiguous.
+- Overlap: Both found the three methods consistent with the issue criteria and the cancellation rule kept in the domain method. Both found no unrelated changes. The Claude review agreed as well.
+- What did the human reviewer notice that Copilot did not: The human read the actual test file and could confirm the specific assertions (T-601 identity, T-622 retained and listed, T-623 unchanged state), which Copilot could not because it only had the code and a description. The human also knew the ID gaps were deliberate.
+- What did Copilot identify that the human reviewer initially missed: Nothing significant. It asked for the test count and ID range to be reconciled, which the human review had not explained explicitly in the PR; the human then confirmed the count (18 functions, 22 cases) and the intentional gaps. The unused setup lines in T-627, the near-duplicate lookup methods and the ID gaps were found by the Claude review, not by Copilot.
+- Unsupported or incorrect Copilot suggestion: No claim was factually incorrect. One finding (test coverage cannot be verified) was a limitation of the context given to it, and its "Important" ranking was too high. The count/range point was an accurate observation that was resolved by checking the file.
+- Human judgement accepted, modified or rejected, and why: Accepted the T-627 cleanup (small and removes clutter), rejected the duplication point (an abstraction is not worth it for 3-line methods), and accepted the test ID gap as a note only. For Copilot: accepted its summary and requirement alignment, and modified both findings as described in H after checking the real tests.
+- Which evidence justified merge approval: The self-review against the issue criteria, 30 passing tests (8 supplied plus 22 new), the reviewed two-file diff, and the T-627 fix. There was no independent approval, and the Copilot comparison was done after the merge, so it did not form part of the merge decision. This is a recorded gap.
 
 ## J Contributions
 
@@ -197,7 +199,7 @@ Review the change against the issue criteria and the tests, keep each PR focused
 - Working directory: project/
 - Observed result: 30 passed on merged main (562d157), run in project/ with python -m pytest, Python 3.14.2, pytest 8.3.5
 - PR and another-member reviewer: https://github.com/mithunnaveen1/st1-assignment-3/pull/4 ; no other member (solo group, self-review approved by tutor)
-- Unresolved issue or none: (1) GitHub Copilot review comparison not done (H and I pending). (2) Sections B to L were drafted with Claude and reviewed by the student (disclosed). (3) No independent reviewer exists (solo group, tutor-approved self-review).
+- Unresolved issue or none: (1) GitHub Copilot comparison done after the merge (H and I), so it was not part of the merge decision. (2) Sections B to L were drafted with Claude and reviewed by the student (disclosed). (3) No independent reviewer exists (solo group, tutor-approved self-review).
 - Stage 7 handover status: [ready for tutor checkpoint / unresolved work]
 - Final submitted SHA if later than tested SHA: Not yet decided. A later evidence-only commit will add this record; the tested code SHA stays 562d15712c8de0bb587b7f3b72b6fa9022c9594b (merged main).
 
